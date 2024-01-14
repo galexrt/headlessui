@@ -38,6 +38,8 @@ interface StateDefinition {
 
   // Exposed functions
   close(focusableElement: HTMLElement | Ref<HTMLElement | null>): void
+  open(focusableElement: HTMLElement | Ref<HTMLElement | null>): void
+  toggle(focusableElement: HTMLElement | Ref<HTMLElement | null>): void
 }
 
 let DisclosureContext = Symbol('DisclosureContext') as InjectionKey<StateDefinition>
@@ -90,6 +92,10 @@ export let Disclosure = defineComponent({
         if (disclosureState.value === DisclosureStates.Closed) return
         disclosureState.value = DisclosureStates.Closed
       },
+      openDisclosure() {
+        if (disclosureState.value === DisclosureStates.Open) return
+        disclosureState.value = DisclosureStates.Open
+      },
       close(focusableElement: HTMLElement | Ref<HTMLElement | null>) {
         api.closeDisclosure()
 
@@ -102,6 +108,26 @@ export let Disclosure = defineComponent({
         })()
 
         restoreElement?.focus()
+      },
+      open(focusableElement: HTMLElement | Ref<HTMLElement | null>) {
+        api.openDisclosure()
+
+        let restoreElement = (() => {
+          if (!focusableElement) return dom(api.button)
+          if (focusableElement instanceof HTMLElement) return focusableElement
+          if (focusableElement.value instanceof HTMLElement) return dom(focusableElement)
+
+          return dom(api.button)
+        })()
+
+        restoreElement?.focus()
+      },
+      toggle(focusableElement: HTMLElement | Ref<HTMLElement | null>) {
+        if (disclosureState.value == DisclosureStates.Closed) {
+          api.open(focusableElement);
+        } else {
+          api.close(focusableElement)
+        }
       },
     } as StateDefinition
 
@@ -117,7 +143,7 @@ export let Disclosure = defineComponent({
 
     return () => {
       let { defaultOpen: _, ...theirProps } = props
-      let slot = { open: disclosureState.value === DisclosureStates.Open, close: api.close }
+      let slot = { open: disclosureState.value === DisclosureStates.Open, close: api.close, toggle: api.toggle }
       return render({
         theirProps,
         ourProps: {},
